@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Real-Time Data Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; background-color: #f7f7f7; }
+    h1 { color: #333; }
+    .section { margin-bottom: 30px; }
+    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    ul { list-style: none; padding: 0; }
+    li { padding: 4px 0; border-bottom: 1px solid #eee; }
+  </style>
+</head>
+<body>
+  <h1>Real-Time Data Dashboard</h1>
+
+  <div class="section card">
+    <h2>Earthquakes (Past Hour)</h2>
+    <ul id="earthquake-list"></ul>
+  </div>
+
+  <div class="section card">
+    <h2>Weather (Salt Lake City)</h2>
+    <div id="weather"></div>
+  </div>
+
+  <div class="section card">
+    <h2>Bitcoin Price (USD)</h2>
+    <div id="crypto"></div>
+  </div>
+
+  <script>
+    const eqList = document.getElementById('earthquake-list');
+    const weatherDiv = document.getElementById('weather');
+    const cryptoDiv = document.getElementById('crypto');
+
+    // Establish a WebSocket connection back to the server
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const ws = new WebSocket(`${wsProtocol}://${window.location.host}/ws`);
+
+    ws.onopen = () => {
+      // Send a heartbeat message to keep the connection alive
+      ws.send('ready');
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      // Update earthquakes
+      eqList.innerHTML = '';
+      (data.earthquakes || []).forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        eqList.appendChild(li);
+      });
+
+      // Update weather
+      if (data.weather && data.weather.temp_F) {
+        weatherDiv.textContent = `${data.weather.temp_F} °F, ${data.weather.description}`;
+      } else {
+        weatherDiv.textContent = 'Weather data unavailable';
+      }
+
+      // Update crypto price
+      if (data.crypto && data.crypto.BTC_USD) {
+        cryptoDiv.textContent = `BTC/USD: ${data.crypto.BTC_USD}`;
+      } else {
+        cryptoDiv.textContent = 'Crypto data unavailable';
+      }
+    };
+  </script>
+</body>
+</html>
